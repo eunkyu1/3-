@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>최종 테스트 버전 — 기사 타이틀 × 불안 × 정책</title>
+<title>기사의 타이틀과 불안감의 연관성 조사</title>
 <meta name="theme-color" content="#1f4aff">
 <style>
 :root{
@@ -91,17 +91,17 @@ input[type="range"]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;b
       <h1>참여 안내</h1>
       <p class="subtitle">
         동일한 사건을 <strong>서로 다른 표현</strong>으로 보도했을 때,
-        기사 표현이 독자의 <strong>불안감</strong>과 <strong>정책 의견</strong>에 미치는 영향을 측정합니다.
+        기사의 표현이 독자의 <strong>심리</strong>와 <strong>정책 의견</strong>에 미치는 영향을 조사합니다.
       </p>
       <ul class="small">
-        <li>일부 라운드에서는 <strong>중립 기사</strong>, 일부 라운드에서는 <strong>불안 프레임 기사</strong>가 무작위로 제시됩니다.</li>
-        <li>응답은 익명 처리되며 연구·교육 목적으로만 사용됩니다.</li>
+        <li>일부 라운드에서는 <strong>객관적인 타이틀의 기사</strong>, 일부 라운드에서는 <strong>불안의 프레임이 가중된 기사</strong>가 무작위로 제시됩니다.</li>
+        <li>응답은 익명 처리되며 연구 목적으로만 사용됩니다.</li>
       </ul>
       <div class="grid">
         <label>닉네임(선택)
           <input type="text" id="nickname" placeholder="익명 가능">
         </label>
-        <label>관심 트랙
+        <label>관심 분야
           <select id="track">
             <option value="media">정책·언론</option>
             <option value="psych">심리·사회</option>
@@ -115,7 +115,7 @@ input[type="range"]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;b
         <button id="btnPing" class="btn ghost">연결 테스트</button>
         <span id="onlineState" class="badge">전송 준비</span>
       </div>
-      <p class="small">※ “연결 테스트”를 누르면 스프레드시트에 테스트 행이 1줄 기록됩니다.</p>
+      <p class="small">※ “💡 Tip. 이곳에는 총 6개의 라운드가 준비되어 있습니다..</p>
     </section>
 
     <!-- 단일 라운드 -->
@@ -126,7 +126,7 @@ input[type="range"]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;b
       <p id="lede" class="lede"></p>
 
       <div class="qa">
-        <label>지금 느끼는 불안 정도 (1=전혀 아님 ~ 5=매우 큼)
+        <label>지금 느끼는 불안감의 정도 (1=전혀 아님 ~ 5=매우 큼)
           <input type="range" id="anxiety" min="1" max="5" step="1" value="3">
           <span id="anxietyVal" class="value-badge">3 / 5</span>
           <div class="ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
@@ -149,7 +149,7 @@ input[type="range"]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;b
     <!-- 완료 -->
     <section id="screen-finish" class="card hidden">
       <h2>완료!</h2>
-      <p class="subtitle">참여 고마워요. 아래 요약을 확인하거나 CSV로 내보낼 수 있어요.</p>
+      <p class="subtitle">참여해주셔서 감사합니다. 아래에서 결과 요약을 확인하거나 CSV로 내보낼 수 있어요.</p>
       <div id="summary"></div>
       <div class="actions">
         <button id="btnReplay" class="btn">다시 하기</button>
