@@ -74,6 +74,13 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:non
 input[type="range"]::-moz-range-track{height:8px;background:#243063;border-radius:6px}
 input[type="range"]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#1f4aff;border:2px solid #8fb4ff}
 .value-badge{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);background:#0e1633;color:#cfd8ff;font-size:12px}
+/* ==== 유형 카드 ==== */
+.type-card{margin-top:14px;padding:16px;border:1px solid var(--border);
+  border-radius:14px;background:#0e1633}
+.type-badge{display:inline-block;margin-bottom:8px;padding:4px 10px;border-radius:999px;
+  border:1px solid var(--accent);color:var(--accent-2);font-weight:700}
+.type-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+.type-pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -401,29 +408,102 @@ async function nextSingle(){
   if(idx < POOL.length) renderCurrent();
   else finish();
 }
+/* ==== 6유형 정의 ==== */
+const TYPE_MAP = {
+  "AFI": { name:"감정적 개혁가", badges:["세상 일에 마음이 먼저 간다","기사를 읽고 그냥 넘기질 못함","변화를 만들어야 직성이 풀림"] },
+  "CFI": { name:"차분한 개혁가", badges:["속은 뜨겁지만 겉은 차분","정보의 뉘앙스를 잘 읽음","정책 토론 좋아함"] },
+  "AFN": { name:"감정적 자유주의자", badges:["내 마음은 롤러코스터","표현보단 사실을 본다","간섭보다 자유를 선호"] },
+  "CFN": { name:"독립형 관찰자", badges:["마음의 파도는 잔잔","남들 흥분해도 난 분석 중","간섭은 적을수록 좋다"] },
+  "AFM": { name:"감정적 중도파", badges:["상황 따라 입장 바뀜","마음의 기복이 있음","균형을 맞추려 노력"] },
+  "CFM": { name:"균형 잡힌 중도파", badges:["잔잔한 호수 같은 멘탈","모든 면을 두루 살핌","편향 없이 판단하려 함"] },
+};
 
+function classifyType(sessionRows){
+  const mean = (arr)=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0;
+  const anx = sessionRows.map(r=>Number(r.anxiety_1to5)||0);
+  const fear = sessionRows.filter(r=>r.variant==='fear').map(r=>Number(r.anxiety_1to5)||0);
+  const neu  = sessionRows.filter(r=>r.variant==='neutral').map(r=>Number(r.anxiety_1to5)||0);
+  const att  = sessionRows.map(r=>r.policy_attitude||"");
+
+  const anxMean = mean(anx);
+  const fearMean = mean(fear);
+  const neuMean  = mean(neu);
+  const frameDelta = Math.abs(fearMean - neuMean);
+
+  const yes = att.filter(v=>v==='찬성').length;
+  const no  = att.filter(v=>v==='반대').length;
+  const unk = att.filter(v=>v==='모름' || v==='모르겠음').length;
+  const total = Math.max(1, yes+no+unk);
+  const yesRate = yes/total, noRate = no/total;
+
+  const AorC = (anxMean >= 3.4) ? 'A' : 'C';
+  const ForN = (frameDelta >= 0.8) ? 'F' : 'N';
+  const diff = yesRate - noRate;
+  const policy =
+    (diff >= 0.20) ? 'I' :
+    (diff <= -0.20) ? 'L' : 'M';
+
+  const code = AorC + ForN + policy;
+  const normalized = TYPE_MAP[code] ? code
+                   : TYPE_MAP[AorC + ForN + 'M'] ? (AorC + ForN + 'M')
+                   : TYPE_MAP[AorC + ForN + 'I'] ? (AorC + ForN + 'I')
+                   : 'CFN';
+
+  return {
+    code: normalized,
+    name: TYPE_MAP[normalized].name,
+    badges: TYPE_MAP[normalized].badges,
+    metrics: { anxMean, fearMean, neuMean, frameDelta, yesRate, noRate, unkRate: unk/total }
+  };
+}
+
+function renderTypeCard(result){
+  const m = result.metrics;
+  const pct = (x)=>Math.round(x*100);
+  const pills = result.badges.map(b=>`<span class="type-pill">• ${b}</span>`).join(' ');
+
+  return `
+    <div class="type-card">
+      <div class="type-badge">당신의 유형</div>
+      <h3 style="margin:6px 0 4px">${result.code} — ${result.name}</h3>
+      <div class="type-grid" style="margin-top:8px">
+        ${pills}
+      </div>
+      <div class="small" style="margin-top:10px;opacity:.9">
+        평균 불안 ${m.anxMean.toFixed(2)} / 5 ・ 프레이밍 민감도 Δ${isNaN(m.frameDelta)?'-':m.frameDelta.toFixed(2)}
+        ・ 정책 성향: 찬성 ${pct(m.yesRate)}% / 반대 ${pct(m.noRate)}% / 모름 ${pct(m.unkRate)}%
+      </div>
+    </div>
+  `;
+}
 function finish(){
   $('screen-trial').classList.add('hidden');
   $('screen-finish').classList.remove('hidden');
 
-  const total = POOL.length; // 6
-  const last = saved.slice(-total);
-  const avg = (arr)=> (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2);
-  const fear = last.filter(r=>r.variant==='fear');
-  const neu  = last.filter(r=>r.variant==='neutral');
-  const fearAvg = fear.length?avg(fear.map(r=>r.anxiety_1to5)):'-';
-  const neuAvg  = neu.length?avg(neu.map(r=>r.anxiety_1to5)):'-';
+  const total = POOL.length; 
+  const session = saved.slice(-total);
 
-  const html = `
+  const mean = (arr)=> (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2);
+  const fear = session.filter(r=>r.variant==='fear').map(r=>r.anxiety_1to5);
+  const neu  = session.filter(r=>r.variant==='neutral').map(r=>r.anxiety_1to5);
+  const overall = mean(session.map(r=>r.anxiety_1to5));
+  const fearAvg = fear.length?mean(fear):'-';
+  const neuAvg  = neu.length?mean(neu):'-';
+
+  const tableHTML = `
     <table>
-      <tr><th>평균 불안(전체)</th><td>${avg(last.map(r=>r.anxiety_1to5))}</td></tr>
+      <tr><th>평균 불안(전체)</th><td>${overall}</td></tr>
       <tr><th>공포 프레임 평균</th><td>${fearAvg}</td></tr>
       <tr><th>중립 프레임 평균</th><td>${neuAvg}</td></tr>
-      <tr><th>표본 크기</th><td>${last.length}</td></tr>
+      <tr><th>표본 크기</th><td>${session.length}</td></tr>
     </table>
-    <p class="hint small">CSV로 내보내면 라운드별 상세 데이터(제목, 변형, 불안도, 정책 태도)를 확인할 수 있어요.</p>
+    <p class="hint small">CSV로 내보내면 라운드별 상세 데이터를 확인할 수 있어요.</p>
   `;
-  $('summary').innerHTML = html;
+
+  const typeResult = classifyType(session);
+  const card = renderTypeCard(typeResult);
+
+  $('summary').innerHTML = card + tableHTML;
 }
 </script>
 </body>
